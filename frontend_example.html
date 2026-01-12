@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IndexTTS2 API 前端调用示例</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .section h3 {
+            color: #555;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        pre code {
+            background: transparent;
+            padding: 0;
+            color: #f8f8f2;
+        }
+        .endpoint {
+            background: #e3f2fd;
+            padding: 15px;
+            border-left: 4px solid #2196f3;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .endpoint-title {
+            font-weight: bold;
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+        .method {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        .method.post {
+            background: #4caf50;
+            color: white;
+        }
+        .method.get {
+            background: #2196f3;
+            color: white;
+        }
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .param-table th,
+        .param-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .param-table th {
+            background: #667eea;
+            color: white;
+        }
+        .param-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .required {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .optional {
+            color: #4caf50;
+        }
+        .note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .demo-box {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .button-demo {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        .button-demo:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        .result-box {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            display: none;
+        }
+        .result-box.show {
+            display: block;
+        }
+        audio {
+            width: 100%;
+            margin-top: 10px;
+        }
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab-button {
+            padding: 10px 20px;
+            background: #e0e0e0;
+            border: none;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .tab-button.active {
+            background: #667eea;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>IndexTTS2 API 前端调用示例</h1>
+            <p>文本转语音 API 集成文档和代码示例</p>
+        </div>
+
+        <!-- API 概述 -->
+        <div class="section">
+            <h2>API 概述</h2>
+            <p>IndexTTS2 提供了两个主要的 API 接口用于文本转语音：</p>
+
+            <div class="endpoint">
+                <div class="endpoint-title">
+                    <span class="method post">POST</span>
+                    <code>/tts</code>
+                </div>
+                <p><strong>功能：</strong>返回 JSON 格式的响应，包含音频 URL 和任务信息</p>
+                <p><strong>适用场景：</strong>需要跟踪任务状态、获取音频URL的场景</p>
+            </div>
+
+            <div class="endpoint">
+                <div class="endpoint-title">
+                    <span class="method post">POST</span>
+                    <code>/tts/audio</code>
+                </div>
+                <p><strong>功能：</strong>直接返回音频文件（二进制流）</p>
+                <p><strong>适用场景：</strong>需要直接获取音频文件的场景，推荐使用</p>
+            </div>
+        </div>
+
+        <!-- 请求参数 -->
+        <div class="section">
+            <h2>请求参数</h2>
+
+            <h3>表单字段 (Form Data)</h3>
+            <table class="param-table">
+                <thead>
+                    <tr>
+                        <th>参数名</th>
+                        <th>类型</th>
+                        <th>必填</th>
+                        <th>默认值</th>
+                        <th>说明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>text</code></td>
+                        <td>string</td>
+                        <td><span class="required">是</span></td>
+                        <td>-</td>
+                        <td>要合成的文本内容（最大1000字符）</td>
+                    </tr>
+                    <tr>
+                        <td><code>emo_control_mode</code></td>
+                        <td>int</td>
+                        <td><span class="optional">否</span></td>
+                        <td>0</td>
+                        <td>情感控制模式：0=同音色参考, 1=情感参考音频, 2=情感向量, 3=情感描述文本</td>
+                    </tr>
+                    <tr>
+                        <td><code>emo_alpha</code></td>
+                        <td>float</td>
+                        <td><span class="optional">否</span></td>
+                        <td>1.0</td>
+                        <td>情感权重 (0.0-1.0)</td>
+                    </tr>
+                    <tr>
+                        <td><code>emo_vector</code></td>
+                        <td>string</td>
+                        <td><span class="optional">否</span></td>
+                        <td>null</td>
+                        <td>8维情感向量的JSON字符串，例如：[0.8, 0.1, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0]</td>
+                    </tr>
+                    <tr>
+                        <td><code>emo_text</code></td>
+                        <td>string</td>
+                        <td><span class="optional">否</span></td>
+                        <td>null</td>
+                        <td>情感描述文本，例如："高兴"、"悲伤"、"愤怒"等</td>
+                    </tr>
+                    <tr>
+                        <td><code>use_random</code></td>
+                        <td>boolean</td>
+                        <td><span class="optional">否</span></td>
+                        <td>false</td>
+                        <td>是否启用随机情感采样</td>
+                    </tr>
+                    <tr>
+                        <td><code>max_text_tokens_per_segment</code></td>
+                        <td>int</td>
+                        <td><span class="optional">否</span></td>
+                        <td>120</td>
+                        <td>每段最大文本token数 (50-500)</td>
+                    </tr>
+                    <tr>
+                        <td><code>verbose</code></td>
+                        <td>boolean</td>
+                        <td><span class="optional">否</span></td>
+                        <td>false</td>
+                        <td>是否启用详细输出</td>
+                    </tr>
+                    <tr>
+                        <td><code>speaker_audio</code></td>
+                        <td>File</td>
+                        <td><span class="optional">否</span></td>
+                        <td>默认音频</td>
+                        <td>说话人参考音频文件（不提供则使用默认音频）</td>
+                    </tr>
+                    <tr>
+                        <td><code>emotion_audio</code></td>
+                        <td>File</td>
+                        <td><span class="optional">否</span></td>
+                        <td>null</td>
+                        <td>情感参考音频文件</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="note">
+                <strong>注意：</strong>
+                <ul style="margin-top: 10px; padding-left: 20px;">
+                    <li>8维情感向量顺序：[高兴, 愤怒, 悲伤, 害怕, 厌恶, 忧郁, 惊讶, 平静]</li>
+                    <li>情感向量所有元素值应该在 0.0-1.0 之间</li>
+                    <li>上传的音频文件格式支持：wav, mp3, m4a 等常见音频格式</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 返回类型 -->
+        <div class="section">
+            <h2>返回类型</h2>
+
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="showTab('json')">/tts 接口返回 (JSON)</button>
+                <button class="tab-button" onclick="showTab('audio')">/tts/audio 接口返回 (音频)</button>
+            </div>
+
+            <div id="json-tab" class="tab-content active">
+                <h3>/tts 接口 - JSON 响应</h3>
+                <p>该接口返回 JSON 格式的响应：</p>
+                <pre><code>{
+  "success": true,
+  "audio_url": "/audio/550e8400-e29b-41d4-a716-446655440000",
+  "task_id": "550e8400-e29b-41d4-a716-446655440000",
+  "message": "TTS synthesis completed successfully"
+}</code></pre>
+                <p>然后使用返回的 <code>audio_url</code> 通过 GET 请求获取音频文件：</p>
+                <pre><code>GET /audio/{task_id}</code></pre>
+            </div>
+
+            <div id="audio-tab" class="tab-content">
+                <h3>/tts/audio 接口 - 直接返回音频</h3>
+                <p>该接口直接返回音频文件的二进制数据：</p>
+                <ul>
+                    <li><strong>Content-Type:</strong> audio/wav</li>
+                    <li><strong>返回格式:</strong> 二进制音频流</li>
+                    <li><strong>文件格式:</strong> WAV</li>
+                </ul>
+                <p>推荐使用该接口，因为它更简单直接，无需二次请求。</p>
+            </div>
+        </div>
+
+        <!-- JavaScript 调用示例 -->
+        <div class="section">
+            <h2>JavaScript 调用示例</h2>
+
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="showExampleTab('fetch')">Fetch API</button>
+                <button class="tab-button" onclick="showExampleTab('axios')">Axios</button>
+                <button class="tab-button" onclick="showExampleTab('async')">Async/Await</button>
+            </div>
+
+            <div id="fetch-example" class="tab-content active">
+                <h3>使用 Fetch API（推荐）</h3>
+                <pre><code>// 方式1：直接获取音频文件（推荐）
+async function textToSpeech(text) {
+    const formData = new FormData();
+    formData.append('text', text);
+    formData.append('emo_alpha', 1.0);
+    formData.append('emo_control_mode', 0);
+
+    try {
+        const response = await fetch('/tts/audio', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error('TTS request failed');
+        }
+
+        // 获取音频 blob
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+
+        // 播放音频
+        const audio = new Audio(audioUrl);
+        audio.play();
+
+        return audioUrl;
+    } catch (error) {
+        console.error('Error:', error);
+        throw error;
+    }
+}
+
+// 使用示例
+textToSpeech('你好，欢迎使用IndexTTS2语音合成服务。');</code></pre>
+
+                <h3>使用 Fetch API - 获取 JSON 响应</h3>
+                <pre><code>// 方式2：先获取JSON，再获取音频文件
+async function textToSpeechWithJson(text) {
+    const formData = new FormData();
+    formData.append('text', text);
+
+    try {
+        // 第一步：发送TTS请求
+        const response = await fetch('/tts', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error('TTS request failed');
+        }
+
+        const result = await response.json();
+
+        if (result.success && result.audio_url) {
+            // 第二步：获取音频文件
+            const audioResponse = await fetch(result.audio_url);
+            const audioBlob = await audioResponse.blob();
+            const audioUrl = URL.createObjectURL(audioBlob);
+
+            // 播放音频
+            const audio = new Audio(audioUrl);
+            audio.play();
+
+            return audioUrl;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        throw error;
+    }
+}</code></pre>
+            </div>
+
+            <div id="axios-example" class="tab-content">
+                <h3>使用 Axios</h3>
+                <pre><code>// 安装：npm install axios
+
+import axios from 'axios';
+
+// 直接获取音频文件
+async function textToSpeech(text) {
+    const formData = new FormData();
+    formData.append('text', text);
+    formData.append('emo_alpha', 1.0);
+
+    try {
+        const response = await axios.post('/tts/audio', formData, {
+            responseType: 'blob', // 重要：设置响应类型为 blob
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+
+        // 创建音频 URL
+        const audioUrl = URL.createObjectURL(response.data);
+
+        // 播放音频
+        const audio = new Audio(audioUrl);
+        audio.play();
+
+        return audioUrl;
+    } catch (error) {
+        console.error('Error:', error);
+        throw error;
+    }
+}
+
+// 使用示例
+textToSpeech('你好，这是一个测试。');</code></pre>
+            </div>
+
+            <div id="async-example" class="tab-content">
+                <h3>高级用法：带情感控制</h3>
+                <pre><code>// 带情感描述的语音合成
+async function emotionalSpeech(text, emotion) {
+    const formData = new FormData();
+    formData.append('text', text);
+    formData.append('emo_control_mode', 3); // 使用情感描述文本
+    formData.append('emo_text', emotion);
+    formData.append('emo_alpha', 0.8);
+
+    const response = await fetch('/tts/audio', {
+        method: 'POST',
+        body: formData
+    });
+
+    if (response.ok) {
+        const audioBlob = await response.blob();
+        return URL.createObjectURL(audioBlob);
+    }
+}
+
+// 使用示例
+emotionalSpeech('今天天气真好！', '高兴').then(audioUrl => {
+    const audio = new Audio(audioUrl);
+    audio.play();
+});
+
+// 带情感向量的语音合成
+async function speechWithEmotionVector(text, emotionVector) {
+    const formData = new FormData();
+    formData.append('text', text);
+    formData.append('emo_control_mode', 2); // 使用情感向量
+    formData.append('emo_vector', JSON.stringify(emotionVector));
+
+    const response = await fetch('/tts/audio', {
+        method: 'POST',
+        body: formData
+    });
+
+    if (response.ok) {
+        const audioBlob = await response.blob();
+        return URL.createObjectURL(audioBlob);
+    }
+}
+
+// 使用示例：高兴的情感
+speechWithEmotionVector(
+    '我非常开心！',
+    [0.9, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0] // [高兴, 愤怒, 悲伤, 害怕, 厌恶, 忧郁, 惊讶, 平静]
+).then(audioUrl => {
+    const audio = new Audio(audioUrl);
+    audio.play();
+});</code></pre>
+            </div>
+        </div>
+
+        <!-- Vue.js 示例 -->
+        <div class="section">
+            <h2>Vue.js 集成示例</h2>
+            <pre><code>&lt;template&gt;
+  &lt;div&gt;
+    &lt;textarea v-model="text" placeholder="输入文本..."&gt;&lt;/textarea&gt;
+    &lt;button @click="generateSpeech" :disabled="loading"&gt;
+      {{ loading ? '生成中...' : '生成语音' }}
+    &lt;/button&gt;
+    &lt;audio v-if="audioUrl" :src="audioUrl" controls&gt;&lt;/audio&gt;
+  &lt;/div&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+import { ref } from 'vue';
+
+const text = ref('你好，这是一个测试。');
+const audioUrl = ref(null);
+const loading = ref(false);
+
+async function generateSpeech() {
+    loading.value = true;
+
+    const formData = new FormData();
+    formData.append('text', text.value);
+    formData.append('emo_alpha', 1.0);
+
+    try {
+        const response = await fetch('/tts/audio', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            const audioBlob = await response.blob();
+            audioUrl.value = URL.createObjectURL(audioBlob);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    } finally {
+        loading.value = false;
+    }
+}
+&lt;/script&gt;</code></pre>
+        </div>
+
+        <!-- React 示例 -->
+        <div class="section">
+            <h2>React 集成示例</h2>
+            <pre><code>import React, { useState } from 'react';
+
+function TextToSpeech() {
+    const [text, setText] = useState('你好，这是一个测试。');
+    const [audioUrl, setAudioUrl] = useState(null);
+    const [loading, setLoading] = useState(false);
+
+    const generateSpeech = async () => {
+        setLoading(true);
+
+        const formData = new FormData();
+        formData.append('text', text);
+        formData.append('emo_alpha', 1.0);
+
+        try {
+            const response = await fetch('/tts/audio', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const audioBlob = await response.blob();
+                const url = URL.createObjectURL(audioBlob);
+                setAudioUrl(url);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        &lt;div&gt;
+            &lt;textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="输入文本..."
+            /&gt;
+            &lt;button onClick={generateSpeech} disabled={loading}&gt;
+                {loading ? '生成中...' : '生成语音'}
+            &lt;/button&gt;
+            {audioUrl && &lt;audio src={audioUrl} controls /&gt;}
+        &lt;/div&gt;
+    );
+}
+
+export default TextToSpeech;</code></pre>
+        </div>
+
+        <!-- 在线演示 -->
+        <div class="section">
+            <h2>在线演示</h2>
+            <div class="demo-box">
+                <h3>快速测试</h3>
+                <p style="margin-bottom: 15px;">输入文本并点击按钮生成语音：</p>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">要合成的文本：</label>
+                    <textarea
+                        id="demoText"
+                        style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; min-height: 80px;"
+                    >你好，这是IndexTTS2 API的语音合成测试。</textarea>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">情感控制：</label>
+                    <select id="demoEmotion" style="padding: 8px; border: 2px solid #ddd; border-radius: 6px;">
+                        <option value="">默认</option>
+                        <option value="高兴">高兴</option>
+                        <option value="悲伤">悲伤</option>
+                        <option value="愤怒">愤怒</option>
+                        <option value="惊讶">惊讶</option>
+                    </select>
+                </div>
+
+                <button class="button-demo" onclick="generateDemo()">生成语音</button>
+
+                <div id="demoResult" class="result-box">
+                    <h4 style="margin-bottom: 10px;">生成的音频：</h4>
+                    <audio id="demoAudio" controls></audio>
+                </div>
+            </div>
+        </div>
+
+        <!-- 错误处理 -->
+        <div class="section">
+            <h2>错误处理</h2>
+            <pre><code>async function textToSpeechWithErrorHandling(text) {
+    const formData = new FormData();
+    formData.append('text', text);
+
+    try {
+        const response = await fetch('/tts/audio', {
+            method: 'POST',
+            body: formData
+        });
+
+        // 处理不同的 HTTP 状态码
+        if (response.status === 503) {
+            throw new Error('TTS 模型未初始化，请稍后再试');
+        } else if (response.status === 400) {
+            const errorText = await response.text();
+            throw new Error('请求参数错误: ' + errorText);
+        } else if (response.status === 500) {
+            throw new Error('服务器内部错误');
+        } else if (!response.ok) {
+            throw new Error('未知错误');
+        }
+
+        const audioBlob = await response.blob();
+        return URL.createObjectURL(audioBlob);
+
+    } catch (error) {
+        console.error('语音合成失败:', error.message);
+
+        // 显示用户友好的错误提示
+        alert('语音合成失败: ' + error.message);
+        throw error;
+    }
+}</code></pre>
+        </div>
+
+        <!-- 最佳实践 -->
+        <div class="section">
+            <h2>最佳实践</h2>
+            <h3>1. 内存管理</h3>
+            <pre><code>// 使用完后释放 Blob URL
+function cleanupAudio(audioUrl) {
+    if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+    }
+}
+
+// 使用示例
+let audioUrl = null;
+try {
+    audioUrl = await textToSpeech('测试文本');
+    // 播放音频...
+} finally {
+    // 清理资源
+    cleanupAudio(audioUrl);
+}</code></pre>
+
+            <h3>2. 请求去重和防抖</h3>
+            <pre><code>// 防抖函数
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// 使用防抖
+const debouncedSpeech = debounce(textToSpeech, 500);
+
+// 输入框输入时触发
+inputElement.addEventListener('input', (e) => {
+    debouncedSpeech(e.target.value);
+});</code></pre>
+
+            <h3>3. 进度反馈</h3>
+            <pre><code>async function textToSpeechWithProgress(text, onProgress) {
+    onProgress?.('正在准备...');
+
+    const formData = new FormData();
+    formData.append('text', text);
+
+    try {
+        onProgress?.('正在生成语音...');
+        const response = await fetch('/tts/audio', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error('请求失败');
+        }
+
+        onProgress?.('正在处理音频...');
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+
+        onProgress?.('完成！');
+        return audioUrl;
+
+    } catch (error) {
+        onProgress?.('发生错误');
+        throw error;
+    }
+}
+
+// 使用示例
+textToSpeechWithProgress('测试文本', (status) => {
+    console.log('状态:', status);
+    statusElement.textContent = status;
+});</code></pre>
+        </div>
+
+        <!-- 页脚 -->
+        <div class="section" style="text-align: center; color: #666;">
+            <p>更多详细信息，请访问 <a href="/docs" style="color: #667eea;">API 文档</a></p>
+            <p style="margin-top: 10px;">© 2025 IndexTTS2 API</p>
+        </div>
+    </div>
+
+    <script>
+        // 切换返回类型标签
+        function showTab(tabName) {
+            // 隐藏所有标签内容
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // 移除所有标签按钮的 active 类
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // 显示选中的标签内容
+            document.getElementById(tabName + '-tab').classList.add('active');
+
+            // 添加 active 类到点击的按钮
+            event.target.classList.add('active');
+        }
+
+        // 切换示例标签
+        function showExampleTab(tabName) {
+            // 隐藏所有标签内容
+            document.querySelectorAll('[id$="-example"]').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // 移除所有标签按钮的 active 类
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // 显示选中的标签内容
+            document.getElementById(tabName + '-example').classList.add('active');
+
+            // 添加 active 类到点击的按钮
+            event.target.classList.add('active');
+        }
+
+        // 演示功能
+        async function generateDemo() {
+            const text = document.getElementById('demoText').value;
+            const emotion = document.getElementById('demoEmotion').value;
+            const resultBox = document.getElementById('demoResult');
+            const audioPlayer = document.getElementById('demoAudio');
+
+            if (!text) {
+                alert('请输入文本');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('text', text);
+
+            if (emotion) {
+                formData.append('emo_control_mode', 3);
+                formData.append('emo_text', emotion);
+            }
+
+            try {
+                resultBox.classList.add('show');
+                audioPlayer.src = '';
+
+                const response = await fetch('/tts/audio', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || '请求失败');
+                }
+
+                const audioBlob = await response.blob();
+                const audioUrl = URL.createObjectURL(audioBlob);
+                audioPlayer.src = audioUrl;
+                audioPlayer.play();
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('错误: ' + error.message);
+                resultBox.classList.remove('show');
+            }
+        }
+    </script>
+</body>
+</html>

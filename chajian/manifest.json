@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "抖音直播新人TTS欢迎",
+  "version": "1.1.0",
+  "description": "监听抖音直播间新人进入，自动生成欢迎语音",
+  "permissions": [],
+  "host_permissions": [
+    "http://localhost:8000/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://live.douyin.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

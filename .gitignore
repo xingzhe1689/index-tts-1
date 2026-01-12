@@ -28,4 +28,9 @@ desktop.ini
 /cache/
 /checkpoints/*
 !/checkpoints/*.yaml
+!/checkpoints/*.vocab
+!/checkpoints/*.model
+!/checkpoints/README.md
 /outputs/
+/uploads/
+/hf_cache/

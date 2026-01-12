@@ -1,0 +1,7 @@
+# IndexTTS2 API Server 依赖文件
+# 如果不使用 uv，可以使用 pip 安装这些依赖
+
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+python-multipart>=0.0.18
+pydantic==2.10.3

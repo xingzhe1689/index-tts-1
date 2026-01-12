@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抖音直播新人插件测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .chatroom {
+            border: 1px solid #ddd;
+            height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #fafafa;
+            margin-bottom: 20px;
+        }
+        .chat-item {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+            border-left: 3px solid #007bff;
+        }
+        .chat-item.new {
+            border-left-color: #ff0050;
+            background: #fff5f5;
+        }
+        .username {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .action {
+            color: #666;
+            font-size: 0.9em;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        #console {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>抖音直播新人TTS插件测试</h1>
+
+        <div class="controls">
+            <button onclick="addNewUser()">添加新用户</button>
+            <button onclick="addMultipleUsers()">批量添加用户（演示并发）</button>
+            <button onclick="clearChat()">清空聊天</button>
+            <button onclick="clearConsole()">清空控制台</button>
+            <button onclick="showQueueStatus()">查看队列状态</button>
+            <button onclick="simulatePlayComplete()">模拟播放完成</button>
+        </div>
+
+        <h3>模拟聊天室</h3>
+        <div class="chatroom webcast-chatroom___list" id="chatroom">
+            <!-- 聊天消息会在这里显示 -->
+        </div>
+
+        <h3>播放队列状态</h3>
+        <div id="queue-status">
+            <div>📊 队列长度: 0</div>
+            <div>▶️ 正在播放: 否</div>
+            <div>👤 当前播放: 无</div>
+            <div>⏭️ 下一位播放: 无</div>
+            <div>📋 队列列表: (空)</div>
+        </div>
+
+        <h3>控制台输出</h3>
+        <div id="console"></div>
+    </div>
+
+    <script>
+        // 模拟控制台和播放队列
+        const consoleDiv = document.getElementById('console');
+        const queueStatusDiv = document.getElementById('queue-status');
+        const originalLog = console.log;
+        const originalError = console.error;
+
+        // 模拟播放队列状态
+        let mockQueue = {
+            length: 0,
+            isPlaying: false,
+            currentUser: null,
+            queueList: []
+        };
+
+        function updateQueueStatus() {
+            const nextUser = mockQueue.length > 0 ? mockQueue.queueList[0] || '未知' : '无';
+            const queueList = mockQueue.queueList.length > 0 ? mockQueue.queueList.join(' → ') : '(空)';
+
+            queueStatusDiv.innerHTML = `
+                <div>📊 队列长度: ${mockQueue.length}</div>
+                <div>▶️ 正在播放: ${mockQueue.isPlaying ? '是' : '否'}</div>
+                <div>👤 当前播放: ${mockQueue.currentUser || '无'}</div>
+                <div>⏭️ 下一位播放: ${nextUser}</div>
+                <div>📋 队列列表: ${queueList}</div>
+            `;
+        }
+
+        function addToConsole(message, type = 'log') {
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#f00' : '#0f0';
+            consoleDiv.innerHTML += `<span style="color: ${color}">[${time}] ${message}</span>\n`;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+
+            // 模拟更新播放队列状态
+            if (message.includes('已添加到播放队列')) {
+                const userName = message.split(':')[1]?.trim() || '未知用户';
+                mockQueue.queueList.push(userName);
+                mockQueue.length = mockQueue.queueList.length;
+                updateQueueStatus();
+            } else if (message.includes('开始播放欢迎语音')) {
+                mockQueue.isPlaying = true;
+                mockQueue.currentUser = message.split(':')[1]?.trim().split('"')[0] || '未知';
+                updateQueueStatus();
+            } else if (message.includes('播放完成')) {
+                mockQueue.isPlaying = false;
+                mockQueue.currentUser = null;
+                if (mockQueue.queueList.length > 0) {
+                    mockQueue.queueList.shift(); // 移除第一个
+                }
+                mockQueue.length = mockQueue.queueList.length;
+                updateQueueStatus();
+            }
+        }
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole(args.join(' '));
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole(args.join(' '), 'error');
+        };
+
+        // 模拟抖音聊天室结构
+        let userCounter = 1;
+
+        function addNewUser() {
+            const chatroom = document.getElementById('chatroom');
+            const userName = `测试用户${userCounter++}`;
+
+            // 创建新的聊天项目（模拟抖音的结构）
+            const chatItem = document.createElement('div');
+            chatItem.className = 'webcast-chatroom___item chat-item new webcast-chatroom___item_new';
+            chatItem.setAttribute('data-id', `test_${Date.now()}_${Math.random()}`);
+
+            chatItem.innerHTML = `
+                <span class="username v8LY0gZF">${userName}</span>
+                <span class="action cL385mHb">来了</span>
+            `;
+
+            chatroom.appendChild(chatItem);
+
+            // 移除.new类（模拟抖音的行为）
+            setTimeout(() => {
+                chatItem.classList.remove('new');
+            }, 1000);
+        }
+
+        function clearChat() {
+            document.getElementById('chatroom').innerHTML = '';
+        }
+
+        function clearConsole() {
+            consoleDiv.innerHTML = '';
+        }
+
+        function showQueueStatus() {
+            console.log('🎵 当前播放队列状态:');
+            console.log(`   队列长度: ${mockQueue.length}`);
+            console.log(`   正在播放: ${mockQueue.isPlaying}`);
+            console.log(`   当前用户: ${mockQueue.currentUser || '无'}`);
+        }
+
+        function simulatePlayComplete() {
+            if (mockQueue.isPlaying) {
+                console.log(`⏹️ 播放完成: ${mockQueue.currentUser}`);
+                mockQueue.isPlaying = false;
+                mockQueue.currentUser = null;
+                mockQueue.length = Math.max(0, mockQueue.length - 1);
+                updateQueueStatus();
+
+                // 如果还有待播放的，模拟开始播放下一个
+                if (mockQueue.length > 0) {
+                    setTimeout(() => {
+                        mockQueue.isPlaying = true;
+                        mockQueue.currentUser = `模拟用户${Math.floor(Math.random() * 100)}`;
+                        console.log(`▶️ 开始播放下一个: ${mockQueue.currentUser}`);
+                        updateQueueStatus();
+                    }, 1000);
+                }
+            } else {
+                console.log('⚠️ 当前没有正在播放的音频');
+            }
+        }
+
+        function addMultipleUsers() {
+            const userNames = ['小明', '小红', '小刚', '小丽', '小王'];
+            console.log(`🚀 批量添加 ${userNames.length} 个用户，演示并发TTS请求...`);
+            console.log(`📝 预期行为: 每个TTS请求完成时立即加入播放队列`);
+            console.log(`🎵 播放规则: 顺序播放，避免重叠`);
+
+            userNames.forEach((name, index) => {
+                setTimeout(() => {
+                    addNewUserWithName(name);
+                    // 模拟TTS请求延迟（0.5-2秒随机）
+                    const delay = 500 + Math.random() * 1500;
+                    setTimeout(() => {
+                        simulateTTSComplete(name);
+                    }, delay);
+                }, index * 200); // 每个用户间隔200ms进入
+            });
+        }
+
+        function simulateTTSComplete(userName) {
+            console.log(`✅ TTS请求完成: ${userName} (模拟)`);
+            // 这里应该调用 audioQueue.add()，但在测试页面中我们只是模拟
+            console.log(`🎵 ${userName} 已添加到播放队列`);
+        }
+
+        function addNewUserWithName(customName) {
+            const chatroom = document.getElementById('chatroom');
+            const userName = customName || `测试用户${userCounter++}`;
+
+            // 创建新的聊天项目（模拟抖音的结构）
+            const chatItem = document.createElement('div');
+            chatItem.className = 'webcast-chatroom___item chat-item new webcast-chatroom___item_new';
+            chatItem.setAttribute('data-id', `test_${Date.now()}_${Math.random()}`);
+
+            chatItem.innerHTML = `
+                <span class="username v8LY0gZF">${userName}</span>
+                <span class="action cL385mHb">来了</span>
+            `;
+
+            chatroom.appendChild(chatItem);
+
+            // 模拟TTS请求延迟和播放过程
+            console.log(`🎤 模拟发送TTS请求: ${userName}`);
+            const requestDelay = 300 + Math.random() * 1200; // 300-1500ms随机延迟
+
+            setTimeout(() => {
+                console.log(`✅ TTS请求完成: ${userName} (${requestDelay.toFixed(0)}ms)`);
+                console.log(`🎶 立即添加到播放队列: ${userName}`);
+                mockQueue.queueList.push(userName);
+                mockQueue.length = mockQueue.queueList.length;
+                updateQueueStatus();
+
+                // 如果没有在播放，立即开始播放
+                if (!mockQueue.isPlaying && mockQueue.queueList.length > 0) {
+                    const nextUser = mockQueue.queueList[0];
+                    mockQueue.isPlaying = true;
+                    mockQueue.currentUser = nextUser;
+                    console.log(`▶️ 立即开始播放: ${nextUser}`);
+                    updateQueueStatus();
+
+                    // 模拟播放时长
+                    const playDuration = 1500 + Math.random() * 1000; // 1.5-2.5秒
+                    setTimeout(() => {
+                        console.log(`⏹️ 播放完成: ${nextUser}`);
+                        mockQueue.isPlaying = false;
+                        mockQueue.currentUser = null;
+                        mockQueue.queueList.shift();
+                        mockQueue.length = mockQueue.queueList.length;
+                        updateQueueStatus();
+
+                        // 如果还有待播放的，继续播放
+                        if (mockQueue.queueList.length > 0) {
+                            const next = mockQueue.queueList[0];
+                            console.log(`⏭️ 立即播放下一个: ${next}`);
+                            setTimeout(() => {
+                                mockQueue.isPlaying = true;
+                                mockQueue.currentUser = next;
+                                console.log(`▶️ 开始播放: ${next}`);
+                                updateQueueStatus();
+                            }, 100); // 短暂延迟模拟无缝衔接
+                        }
+                    }, playDuration);
+                }
+            }, requestDelay);
+
+            // 移除.new类（模拟抖音的行为）
+            setTimeout(() => {
+                chatItem.classList.remove('new');
+            }, 1000);
+        }
+
+        // 环境兼容性测试
+        function testCompatibility() {
+            console.log('🔧 测试页面环境兼容性...');
+
+            try {
+                const testFormData = new FormData();
+                testFormData.append('test', 'value');
+                console.log('✅ FormData 支持正常');
+            } catch (error) {
+                console.error('❌ FormData 测试失败:', error);
+            }
+
+            if (typeof fetch !== 'undefined') {
+                console.log('✅ fetch API 支持正常');
+            } else {
+                console.error('❌ fetch API 不支持');
+            }
+
+            try {
+                const testAudio = new Audio();
+                console.log('✅ Audio API 支持正常');
+            } catch (error) {
+                console.error('❌ Audio API 测试失败:', error);
+            }
+        }
+
+        // 播放队列演示
+        function demonstrateQueueLogic() {
+            console.log('🎭 播放队列逻辑演示');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('时间线模拟:');
+            console.log('T=0s:  小明进入 → 发送TTS请求A');
+            console.log('T=0.2s: 小红进入 → 发送TTS请求B');
+            console.log('T=0.4s: 小刚进入 → 发送TTS请求C');
+            console.log('T=0.8s: 请求A完成 → 立即播放小明 (队列: 小明)');
+            console.log('T=1.2s: 请求B完成 → 加入队列等待 (队列: 小明 → 小红)');
+            console.log('T=1.5s: 请求C完成 → 加入队列等待 (队列: 小明 → 小红 → 小刚)');
+            console.log('T=3.8s: 小明播放完成 → 立即播放小红 (队列: 小红 → 小刚)');
+            console.log('T=6.2s: 小红播放完成 → 立即播放小刚 (队列: 小刚)');
+            console.log('T=8.6s: 小刚播放完成 → 队列清空');
+            console.log('');
+            console.log('✅ 关键特性:');
+            console.log('   • 请求完成即刻可播放');
+            console.log('   • 顺序播放避免重叠');
+            console.log('   • 无需等待所有请求完成');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        }
+
+        // 页面加载提示
+        window.addEventListener('load', function() {
+            console.log('测试页面加载完成');
+            testCompatibility();
+            demonstrateQueueLogic();
+            console.log('');
+            console.log('点击"添加新用户"按钮来模拟新人进入');
+            console.log('点击"批量添加用户"按钮演示并发场景');
+            console.log('确保浏览器插件已加载以测试TTS功能');
+        });
+    </script>
+
+    <!-- 加载插件脚本 -->
+    <script src="content.js"></script>
+</body>
+</html>

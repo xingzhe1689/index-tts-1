@@ -299,6 +299,23 @@ Example of running a script via `uv`:
 PYTHONPATH="$PYTHONPATH:." uv run indextts/infer_v2.py
 ```
 
+#### 🌐 Using IndexTTS2 API Server
+
+IndexTTS2 now provides a REST API server for easy integration:
+
+```bash
+# Install API dependencies
+uv sync --extra api
+
+# Start the API server
+uv run api_server.py
+
+# Server will be available at http://localhost:8000
+# API documentation: http://localhost:8000/docs
+```
+
+See [API_README.md](API_README.md) for detailed API documentation and examples.
+
 Here are several examples of how to use IndexTTS2 in your own scripts:
 
 1. Synthesize new speech with a single reference audio file (voice cloning):
